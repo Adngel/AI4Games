@@ -1,25 +1,20 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Utilities;
 
 
 [RequireComponent (requiredComponent: typeof (SphereCollider), requiredComponent2: typeof (Rigidbody))]
-public class AI_FleeAndSeek : MonoBehaviour
+public class Agent_FleeAndSeek_w1 : MonoBehaviour
 {
     [SerializeField] Rigidbody RB;
     [SerializeField] SphereCollider Collider;
     [SerializeField] Transform Target;
     
-    [SerializeField] float Reach = 1.0f;
-    [SerializeField] bool Following = true;
-    [SerializeField] bool Fleeing = true;
-
     [SerializeField] float SeekForce = 1.0f;
     [SerializeField] float FleeForce = 1.0f;
     [SerializeField] const float MAXSPEED = 100.0f;
+    [SerializeField] bool IsFlying = true;
 
-    [SerializeField] Vector3 DirectionMov;
+    Vector3 DirectionMov;
 
     private void Reset()
     {
@@ -27,7 +22,6 @@ public class AI_FleeAndSeek : MonoBehaviour
         Collider = GetComponent<SphereCollider>();
         SeekForce = 1.0f;
         FleeForce = 1.0f;
-        Reach = Collider.radius;
 
         if (RB)
         {
@@ -49,18 +43,23 @@ public class AI_FleeAndSeek : MonoBehaviour
     {
         DirectionMov = Vector3.zero;
 
-        if (Vector3.Distance(transform.position, Target.position) > Reach)
+        if (!IsFlying)
         {
-            if (Following) DirectionMov = SteeringForce.Seek(transform.position, Target.position, SeekForce);
-            if (Fleeing) DirectionMov += SteeringForce.Flee(transform.position, Target.position, FleeForce);
+            DirectionMov = AI_Steering.Seek(transform.position, Target.position, SeekForce);
+            DirectionMov += AI_Steering.Flee(transform.position, Target.position, FleeForce);
+        }else{
+            DirectionMov = AI_Steering.SeekFlying(transform.position, Target.position, SeekForce);
+            DirectionMov += AI_Steering.FleeFlying(transform.position, Target.position, FleeForce);
         }
     }
 
     private void FixedUpdate()
     {
+        //Translation
         RB.AddForce(DirectionMov); //Not Time.deltatime needed in FixedUpdate
         RB.velocity = Vector3.ClampMagnitude(RB.velocity, MAXSPEED);
 
+        //Rotation
         if (RB.velocity.sqrMagnitude > 0.1f)    transform.forward = DirectionMov;
     }
 }

@@ -1,8 +1,7 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
-public class GoalController : MonoBehaviour
+[RequireComponent(requiredComponent: typeof(SphereCollider), requiredComponent2: typeof(Rigidbody))]
+public class Agent_GoalController_w2 : MonoBehaviour
 {
 
 

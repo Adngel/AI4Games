@@ -1,28 +1,29 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 using Utilities;
 
 
 [RequireComponent (requiredComponent: typeof (SphereCollider), requiredComponent2: typeof (Rigidbody))]
-public class AI_FleeAndSeek_w2 : MonoBehaviour
+public class Agent_FleeAndSeek_w2 : MonoBehaviour
 {
     [SerializeField] Rigidbody RB;
     [SerializeField] SphereCollider Collider;
     [SerializeField] Transform Target;
-    Vector3 targetPos;
 
-    [SerializeField] bool Following = true;
-    [SerializeField] bool Fleeing = true;
+    [SerializeField] bool IsFlying = false;
+    [SerializeField] LayerMask mask;
 
     [SerializeField] float SeekForce = 1.0f;
     [SerializeField] float FleeForce = 1.0f;
-    [SerializeField] const float MAXSPEED = 100.0f;
-    [SerializeField] float Range = 1.0f;
-    [SerializeField] Vector3 DirectionMov;
-    [SerializeField] AnimationCurve curve;
 
+    [SerializeField] const float MAXSPEED = 100.0f;
+
+    [SerializeField] float Range = 1.0f;
+    [SerializeField] AnimationCurve curve;
+    
     [SerializeField] Transform avatar;
+
+    Vector3 targetPos;
+    Vector3 DirectionMov;
 
     private void Reset()
     {
@@ -33,15 +34,16 @@ public class AI_FleeAndSeek_w2 : MonoBehaviour
 
         avatar = transform.GetChild(0);
 
-        Following = true;
-        Fleeing = false;
-
         if (RB)
         {
             RB.useGravity = false;
+            RB.drag = 1.0f;
             RB.collisionDetectionMode = CollisionDetectionMode.Continuous;
             RB.freezeRotation = true;
         }
+
+        mask = 1 << 8;
+        curve = AnimationCurve.Linear(0, 0, 1, 1);
     }
 
     void Update()
@@ -52,19 +54,17 @@ public class AI_FleeAndSeek_w2 : MonoBehaviour
         {
             targetPos = Target.position;
         }else{
-            Vector3 mousePos = new Vector3(Input.mousePosition.x, Input.mousePosition.y, 1);
-            var _ray = Camera.main.ScreenPointToRay(mousePos);
-
-            RaycastHit hitpoint;
-            if (Physics.Raycast(_ray, out hitpoint))
-            {
-                targetPos = hitpoint.point;
-            }
+            targetPos = IO_Mouse.MouseWorldPosition(transform.position, mask);
         }
-        
-        
-        if (Following) DirectionMov = SteeringForce.Arrive(transform.position, targetPos, SeekForce, Range, true, curve);
-        if (Fleeing) DirectionMov = SteeringForce.StarFlee(transform.position, targetPos, FleeForce, Range);
+
+        if (!IsFlying)
+        {
+            DirectionMov = AI_Steering.Seek(transform.position, targetPos, SeekForce, Range, curve);
+            DirectionMov += AI_Steering.Flee(transform.position, targetPos, FleeForce, Range, curve);
+        }else{
+            DirectionMov = AI_Steering.SeekFlying(transform.position, targetPos, SeekForce, Range, curve);
+            DirectionMov += AI_Steering.FleeFlying(transform.position, targetPos, FleeForce, Range, curve);
+        }
 
         //Rotation
         if (DirectionMov.sqrMagnitude > 0f) avatar.forward = DirectionMov;
