@@ -12,7 +12,7 @@ public class Agent_SpriteSheet : MonoBehaviour
     [SerializeField] Animator anim;
 
     [Header("Constants")]
-    [SerializeField] const float MAXSPEED = 100.0f;
+    [SerializeField] const float MAXSPEED = 10.0f;
     enum CardinalPoints { NW, N, NE, E, SE, S, SW, W };
 
     [Header("Movement Physics")]
@@ -25,7 +25,7 @@ public class Agent_SpriteSheet : MonoBehaviour
 
     [Header("Visuals")]
     [SerializeField] CardinalPoints RotationgFacing;
-    [SerializeField] float VelocityStop = 0.5f;
+    [SerializeField] float VelocityStop = 0.1f;
 
     Vector3 targetPos;
     Vector3 DirectionMov;
@@ -64,13 +64,16 @@ public class Agent_SpriteSheet : MonoBehaviour
         }
 
         //Avatar visuals
-        if (DirectionMov.sqrMagnitude > VelocityStop)
+        var speed = Mathf.Min(RB.velocity.sqrMagnitude / MAXSPEED, 1.0f);
+        if (speed > 0.1f)
         {
             anim.SetFloat("IsMoving", 1.0f);
             CalculateRotation();
         }else{
             anim.SetFloat("IsMoving", 0.0f);
         }
+
+        anim.SetFloat("Speed", speed);
     }
 
     private void FixedUpdate()

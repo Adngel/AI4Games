@@ -95,6 +95,39 @@ namespace Utilities
             return SeekFlying(origin, target, seekForce, Range, curve);
         }
 
+        public static Vector3 Pursue (Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce)
+        {
+            NullifyPlane(ref origin, ref targetPos);
+
+            Vector3 lookAheadVector = targetVel.normalized * lookAhead;
+            Vector3 seekPosition = targetPos + lookAheadVector;
+            return Seek(origin, seekPosition, PursueForce);
+        }
+
+        public static Vector3 Pursue(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range)
+        {
+            NullifyPlane(ref origin, ref targetPos);
+
+            return Pursue(origin, targetPos, targetVel, lookAhead, PursueForce, Range, LINEAR);
+        }
+
+        public static Vector3 Pursue(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range, AnimationCurve curve)
+        {
+            NullifyPlane(ref origin, ref targetPos);
+
+            if (Range <= 0f) return Vector3.zero;
+
+            var desiredVelocity = targetPos - origin;
+            var sqrDistance = desiredVelocity.sqrMagnitude;
+            var factor = curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
+
+            var lookAheadVector = targetVel.normalized * lookAhead * factor;
+            var seekPosition = targetPos + lookAheadVector;
+            desiredVelocity = seekPosition - origin;
+
+            return desiredVelocity * PursueForce * factor;
+
+        }
 
         //Away from Target Behaviours
         /////////////////////////////
