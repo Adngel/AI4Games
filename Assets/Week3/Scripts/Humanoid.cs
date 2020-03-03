@@ -9,12 +9,13 @@ public class Humanoid : MonoBehaviour
     [Header("References")]
     [SerializeField] Rigidbody RB;
     [SerializeField] SphereCollider Collider;
+    [SerializeField] public Transform Target;
 
     [Header("Constants")]
     [SerializeField] const float MAXSPEED = 10.0f;
 
     [Header("Movement Physics")]
-    [SerializeField] bool IsFlying = false;
+    [SerializeField] public bool IsFlying = false;
     
 
     [Header("Movement Logics")]

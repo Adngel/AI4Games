@@ -3,19 +3,21 @@ using System.Collections.Generic;
 using UnityEngine;
 using Utilities;
 
-public class AIB_Seek : SteeringBehaviour
+public class AIB_Evader : SteeringBehaviour
 {
-    [SerializeField] float _seekForce = 1.0f;
-    private Transform _target; //You must initialize it in Humanoid component.
     [SerializeField] float Range = 1.0f;
     [SerializeField] AnimationCurve curve;
+    [SerializeField] float _fleeForce = 1.0f;
+    [SerializeField] float _lookAhead = 1.0f;
+    private Transform _target; //You must initialize it in Humanoid component.
     [SerializeField] LayerMask _mask;
 
     private void Reset()
     {
         Range = 1.0f;
         curve = AnimationCurve.Linear(0, 0, 1, 1);
-        _seekForce = 1.0f;
+        _fleeForce = 1.0f;
+        _lookAhead = 1.0f;
         _mask = 1 << 8;
     }
 
@@ -32,13 +34,15 @@ public class AIB_Seek : SteeringBehaviour
         {
             var position = transform.position;
             var target = _target ? _target.position : IO_Mouse.MouseWorldPosition(transform.position, _mask);
+            var speed = _target ? _target.GetComponent<Rigidbody>().velocity : Vector3.zero;
 
             if (!isFlying)
             {
-                return AI_Steering.Seek(position, target, _seekForce, Range,curve);
+                return AI_Steering.Evade(position, target, speed, _lookAhead, _fleeForce, Range, curve);
             }else{
-                return AI_Steering.SeekFlying(position, target, _seekForce, Range, curve);
+                return AI_Steering.EvadeFlying(position, target, speed, _lookAhead, _fleeForce, Range, curve);
             }
         }
     }
+
 }

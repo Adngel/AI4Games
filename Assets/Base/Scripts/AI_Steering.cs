@@ -28,12 +28,14 @@ namespace Utilities
         static void NullifyPlane(ref Vector3 origin, ref Vector3 target)
         {//Nullify the vertical axis.
 
-            if (IS3D) 
+            if (IS3D)
             {
                 //Horizontal Movement is in XZ
                 origin.y = 0;
                 target.y = 0;
-            }else{ 
+            }
+            else
+            {
                 //Horizontal Movement is in XY
                 origin.z = 0;
                 target.z = 0;
@@ -76,6 +78,39 @@ namespace Utilities
         }
 
 
+        public static Vector3 PursueFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce)
+        {
+            //Pursuer
+
+            Vector3 lookAheadVector = targetVel.normalized * lookAhead;
+            Vector3 seekPosition = targetPos + lookAheadVector;
+            return SeekFlying(origin, seekPosition, PursueForce);
+        }
+
+        public static Vector3 PursueFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range)
+        {
+            //Pursuer Range
+
+            return PursueFlying(origin, targetPos, targetVel, lookAhead, PursueForce, Range, LINEAR);
+        }
+
+        public static Vector3 PursueFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range, AnimationCurve curve)
+        {
+            //Pursuer Range + Curve
+
+            if (Range <= 0f) return Vector3.zero;
+
+            var desiredVelocity = targetPos - origin;
+            var sqrDistance = desiredVelocity.sqrMagnitude;
+            var factor = curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
+
+            var lookAheadVector = targetVel.normalized * lookAhead * factor;
+            var seekPosition = targetPos + lookAheadVector;
+            desiredVelocity = seekPosition - origin;
+
+            return desiredVelocity * PursueForce * factor;
+        }
+
         //These only gives direction in 2d environment. (reusing the previous SeekFlying ones).
         public static Vector3 Seek(Vector3 origin, Vector3 target, float seekForce)
         {
@@ -95,38 +130,25 @@ namespace Utilities
             return SeekFlying(origin, target, seekForce, Range, curve);
         }
 
-        public static Vector3 Pursue (Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce)
+        public static Vector3 Pursue(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce)
         {
             NullifyPlane(ref origin, ref targetPos);
 
-            Vector3 lookAheadVector = targetVel.normalized * lookAhead;
-            Vector3 seekPosition = targetPos + lookAheadVector;
-            return Seek(origin, seekPosition, PursueForce);
+            return PursueFlying(origin, targetPos, targetVel, lookAhead, PursueForce);
         }
 
         public static Vector3 Pursue(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range)
         {
             NullifyPlane(ref origin, ref targetPos);
 
-            return Pursue(origin, targetPos, targetVel, lookAhead, PursueForce, Range, LINEAR);
+            return PursueFlying(origin, targetPos, targetVel, lookAhead, PursueForce, Range, LINEAR);
         }
 
         public static Vector3 Pursue(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float PursueForce, float Range, AnimationCurve curve)
         {
             NullifyPlane(ref origin, ref targetPos);
 
-            if (Range <= 0f) return Vector3.zero;
-
-            var desiredVelocity = targetPos - origin;
-            var sqrDistance = desiredVelocity.sqrMagnitude;
-            var factor = curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
-
-            var lookAheadVector = targetVel.normalized * lookAhead * factor;
-            var seekPosition = targetPos + lookAheadVector;
-            desiredVelocity = seekPosition - origin;
-
-            return desiredVelocity * PursueForce * factor;
-
+            return PursueFlying(origin, targetPos, targetVel, lookAhead, PursueForce, Range, curve);
         }
 
         //Away from Target Behaviours
@@ -159,8 +181,41 @@ namespace Utilities
             var desiredVelocity = origin - target;
             var sqrDistance = desiredVelocity.sqrMagnitude;
             var factor = 1.0f - curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
-
+            Debug.Log (factor);
             return desiredVelocity * fleeForce * factor;
+        }
+
+        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce)
+        {
+            //Evader
+
+            Vector3 lookAheadVector = targetVel.normalized * lookAhead;
+            Vector3 seekPosition = targetPos + lookAheadVector;
+            return FleeFlying(origin, seekPosition, EvadeForce);
+        }
+
+        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range)
+        {
+            //Evader Range
+
+            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, LINEAR);
+        }
+
+        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range, AnimationCurve curve)
+        {
+            //Evader Range + Curve
+
+            if (Range <= 0f) return Vector3.zero;
+
+            var desiredVelocity = targetPos - origin;
+            var sqrDistance = desiredVelocity.sqrMagnitude;
+            var factor = 1 - curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
+
+            var lookAheadVector = targetVel.normalized * lookAhead * factor;
+            var seekPosition = targetPos + lookAheadVector;
+            desiredVelocity = origin - seekPosition;    //Becuase is running away, "origin" is the destiny and seekPosition the starting point of the direction verctor.
+
+            return desiredVelocity * EvadeForce * factor;
         }
 
 
@@ -168,7 +223,7 @@ namespace Utilities
         public static Vector3 Flee(Vector3 origin, Vector3 target, float fleeForce)
         {
             NullifyPlane(ref origin, ref target);
-            return FleeFlying (origin, target, fleeForce);
+            return FleeFlying(origin, target, fleeForce);
         }
 
         public static Vector3 Flee(Vector3 origin, Vector3 target, float fleeForce, float Range)
@@ -183,5 +238,26 @@ namespace Utilities
             return FleeFlying(origin, target, fleeForce, Range, curve);
         }
 
-    }
-}
+        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce)
+        {
+            //Evader
+            NullifyPlane(ref origin, ref targetPos);
+            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce);
+        }
+
+        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range)
+        {
+            //Evader Range
+            NullifyPlane(ref origin, ref targetPos);
+            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, LINEAR);
+        }
+
+        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range, AnimationCurve curve)
+        {
+            NullifyPlane(ref origin, ref targetPos);
+            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, curve);
+        }
+
+    }//End of AI_Steering class
+}//End of Utilities namespace
+

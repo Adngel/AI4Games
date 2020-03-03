@@ -9,7 +9,7 @@ public class AIB_Pursuer : SteeringBehaviour
     [SerializeField] AnimationCurve curve;
     [SerializeField] float _seekForce = 1.0f;
     [SerializeField] float _lookAhead = 1.0f;
-    [SerializeField] private Transform _target;
+    private Transform _target; //You must initialize it in Humanoid component.
     [SerializeField] LayerMask _mask;
 
 
@@ -22,15 +22,27 @@ public class AIB_Pursuer : SteeringBehaviour
         _mask = 1 << 8;
     }
 
+    private void Start()
+    {
+        Humanoid hm = GetComponent<Humanoid>();
+        isFlying = hm.IsFlying;  //isFlying is a protected var inside of SteeringBehaviour
+        _target = hm.Target;
+    }
+
     public override Vector3 SteeringForce
     {
         get
         {
             var position = transform.position;
             var target = _target ? _target.position : IO_Mouse.MouseWorldPosition(transform.position, _mask);
-            Rigidbody RB = _target.GetComponent<Rigidbody>();
-            var speed = RB ? RB.velocity : Vector3.one;
-            return AI_Steering.Pursue(position, target, Vector3.one, _lookAhead, _seekForce);
+            var speed = _target ? _target.GetComponent<Rigidbody>().velocity : Vector3.zero;
+
+            if (!isFlying)
+            {
+                return AI_Steering.Pursue(position, target, speed, _lookAhead, _seekForce, Range,curve);
+            }else{
+                return AI_Steering.PursueFlying(position, target, speed, _lookAhead, _seekForce, Range, curve);
+            }
         }
     }
 
