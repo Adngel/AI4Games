@@ -5,20 +5,21 @@ using Utilities;
 
 public class AIB_Evader : SteeringBehaviour
 {
-    [SerializeField] float Range = 1.0f;
-    [SerializeField] AnimationCurve curve;
     [SerializeField] float _fleeForce = 1.0f;
     [SerializeField] float _lookAhead = 1.0f;
+    [SerializeField] AnimationCurve curve;
+    
     private Transform _target; //You must initialize it in Humanoid component.
+
     [SerializeField] LayerMask _mask;
+    [SerializeField] private RaycastHit[] _obstacles = new RaycastHit[10];
 
     private void Reset()
     {
-        Range = 1.0f;
-        curve = AnimationCurve.Linear(0, 0, 1, 1);
         _fleeForce = 1.0f;
         _lookAhead = 1.0f;
-        _mask = 1 << 8;
+        curve = AnimationCurve.Linear(0, 0, 1, 1);
+        _mask = 1 << 9;
     }
 
     private void Start()
@@ -34,13 +35,27 @@ public class AIB_Evader : SteeringBehaviour
         {
             var position = transform.position;
             var target = _target ? _target.position : IO_Mouse.MouseWorldPosition(transform.position, _mask);
-            var speed = _target ? _target.GetComponent<Rigidbody>().velocity : Vector3.zero;
 
+            var direction = target - position;
+
+            
+            _obstacles = Physics.RaycastAll(position + Vector3.up, direction, _lookAhead, _mask);
+
+            if (_obstacles.Length <= 0)
+            {
+                //if there are not articles, avoid force is 0.
+                return Vector3.zero;
+            }
+
+            target = Utilities.UT_Lists.GetClosestObstacle(_obstacles, position).transform.position ;
+
+            var LeftV = Vector3.Cross(direction, Vector3.up);
+            
             if (!isFlying)
             {
-                return AI_Steering.Evade(position, target, speed, _lookAhead, _fleeForce, Range, curve);
+                return AI_Steering.Evade(position, target, _fleeForce, LeftV, _lookAhead, curve);
             }else{
-                return AI_Steering.EvadeFlying(position, target, speed, _lookAhead, _fleeForce, Range, curve);
+                return AI_Steering.EvadeFlying(position, target, _fleeForce, LeftV, _lookAhead, curve);
             }
         }
     }

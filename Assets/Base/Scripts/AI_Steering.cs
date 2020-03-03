@@ -181,41 +181,33 @@ namespace Utilities
             var desiredVelocity = origin - target;
             var sqrDistance = desiredVelocity.sqrMagnitude;
             var factor = 1.0f - curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
-            Debug.Log (factor);
             return desiredVelocity * fleeForce * factor;
         }
 
-        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce)
-        {
-            //Evader
-
-            Vector3 lookAheadVector = targetVel.normalized * lookAhead;
-            Vector3 seekPosition = targetPos + lookAheadVector;
-            return FleeFlying(origin, seekPosition, EvadeForce);
-        }
-
-        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range)
+        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, float evadeForce, Vector3 leftVector, float range)
         {
             //Evader Range
-
-            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, LINEAR);
+            return EvadeFlying(origin, targetPos, evadeForce, leftVector, range, LINEAR);
         }
 
-        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range, AnimationCurve curve)
+        public static Vector3 EvadeFlying(Vector3 origin, Vector3 targetPos, float evadeForce, Vector3 leftVector, float range, AnimationCurve curve)
         {
             //Evader Range + Curve
+            var _obstacleDir = targetPos - origin;
 
-            if (Range <= 0f) return Vector3.zero;
+            //ObstacleDir should be on the right side of this Perpendicular vector, so:
+            //if Sign is positive, the way to go is the left
+            //if Sign is negative, the way to go is the right
+            var obsSign = Mathf.Sign(Vector3.Dot(-leftVector, _obstacleDir));
 
-            var desiredVelocity = targetPos - origin;
-            var sqrDistance = desiredVelocity.sqrMagnitude;
-            var factor = 1 - curve.Evaluate(Mathf.Min(sqrDistance / Range, 1.0f));
+            var distance = Vector3.Distance(targetPos, origin);
 
-            var lookAheadVector = targetVel.normalized * lookAhead * factor;
-            var seekPosition = targetPos + lookAheadVector;
-            desiredVelocity = origin - seekPosition;    //Becuase is running away, "origin" is the destiny and seekPosition the starting point of the direction verctor.
+            var factor = 1.0f - Mathf.Min(distance, range) / range;
+            //var factor = 1.0f - curve.Evaluate(Mathf.Min(distance, range)/range);
 
-            return desiredVelocity * EvadeForce * factor;
+            Debug.DrawRay(origin + Vector3.up, leftVector * obsSign * factor * evadeForce, Color.green);
+
+            return leftVector * obsSign * factor * evadeForce;
         }
 
 
@@ -238,24 +230,17 @@ namespace Utilities
             return FleeFlying(origin, target, fleeForce, Range, curve);
         }
 
-        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce)
-        {
-            //Evader
-            NullifyPlane(ref origin, ref targetPos);
-            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce);
-        }
-
-        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range)
+        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, float evadeForce, Vector3 leftVector, float range)
         {
             //Evader Range
             NullifyPlane(ref origin, ref targetPos);
-            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, LINEAR);
+            return EvadeFlying(origin, targetPos, evadeForce, leftVector ,range, LINEAR);
         }
 
-        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, Vector3 targetVel, float lookAhead, float EvadeForce, float Range, AnimationCurve curve)
+        public static Vector3 Evade(Vector3 origin, Vector3 targetPos, float evadeForce, Vector3 leftVector, float range, AnimationCurve curve)
         {
             NullifyPlane(ref origin, ref targetPos);
-            return EvadeFlying(origin, targetPos, targetVel, lookAhead, EvadeForce, Range, curve);
+            return EvadeFlying(origin, targetPos, evadeForce, leftVector, range, curve);
         }
 
     }//End of AI_Steering class
