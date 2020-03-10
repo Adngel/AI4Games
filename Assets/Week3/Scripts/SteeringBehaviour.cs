@@ -6,6 +6,7 @@ public abstract class SteeringBehaviour : MonoBehaviour
 {
     public abstract Vector3 SteeringForce { get; }
 
-    protected   bool isFlying = false;
+    [SerializeField] protected bool is2D = true;
+    protected bool isFlying = false;
 }
 

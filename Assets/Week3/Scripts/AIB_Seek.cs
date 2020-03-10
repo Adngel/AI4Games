@@ -7,14 +7,14 @@ public class AIB_Seek : SteeringBehaviour
 {
     [SerializeField] float _seekForce = 1.0f;
     private Transform _target; //You must initialize it in Humanoid component.
-    [SerializeField] float Range = 1.0f;
-    [SerializeField] AnimationCurve curve;
+    [SerializeField] float _range = 1.0f;
+    [SerializeField] AnimationCurve _curve;
     [SerializeField] LayerMask _mask;
 
     private void Reset()
     {
-        Range = 1.0f;
-        curve = AnimationCurve.Linear(0, 0, 1, 1);
+        _range = 1.0f;
+        _curve = AnimationCurve.Linear(0, 0, 1, 1);
         _seekForce = 1.0f;
         _mask = 1 << 8;
     }
@@ -33,12 +33,23 @@ public class AIB_Seek : SteeringBehaviour
             var position = transform.position;
             var target = _target ? _target.position : IO_Mouse.MouseWorldPosition(transform.position, _mask);
 
-            if (!isFlying)
+            if (is2D)
             {
-                return AI_Steering.Seek(position, target, _seekForce, Range,curve);
-            }else{
-                return AI_Steering.SeekFlying(position, target, _seekForce, Range, curve);
+                return AI_Steering_2D.Seek(position, target, _seekForce, _range, _curve);
+            }else{//Is 3D
+                if (!isFlying)
+                {
+                    return AI_Steering.Seek(position, target, _seekForce, _range, _curve);
+                }else{
+                    return AI_Steering.SeekFlying(position, target, _seekForce, _range, _curve);
+                }
             }
         }
+    }
+
+    public Transform Target
+    {
+        get => _target;
+        set => _target = value;
     }
 }

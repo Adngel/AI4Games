@@ -12,7 +12,7 @@ public class Humanoid : MonoBehaviour
     [SerializeField] public Transform Target;
 
     [Header("Constants")]
-    [SerializeField] const float MAXSPEED = 10.0f;
+    [SerializeField] float MAXSPEED = 10.0f;
 
     [Header("Movement Physics")]
     [SerializeField] public bool IsFlying = false;
@@ -52,7 +52,8 @@ public class Humanoid : MonoBehaviour
         }
 
         //Rotation
-        if (_steeringForce.sqrMagnitude > 0f) avatar.forward = _steeringForce;
+        //if (_steeringForce.sqrMagnitude > 0f) avatar.forward = _steeringForce;
+        if (_steeringForce.sqrMagnitude > 0f) avatar.up = _steeringForce.normalized;
     }
 
     private void FixedUpdate()
@@ -60,6 +61,4 @@ public class Humanoid : MonoBehaviour
         RB.AddForce(_steeringForce);
         RB.velocity = Vector3.ClampMagnitude(RB.velocity, MAXSPEED);
     }
-
-
 }
